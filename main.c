@@ -2,46 +2,46 @@
 
 #define WIDTH 8
 #define HEIGHT 8
+#define BLACK '*'
+#define WHITE '.'
+#define NONE ' '
 
 long unsigned int c2b(int x, int y) {
     if (x < 0 || x > 7 || y < 0 || y > 7) return 0;
-
-    long unsigned int bitset = 1;
-
-    bitset <<= (x * 8);
-    bitset <<= y;
-
-    return bitset;
+    else return 1lu << (x * 8 + y);
 }
 
-void printb(long unsigned int black, long unsigned int white) {
-    for (int y = 0; y < HEIGHT; y++) {
-        for (int x = 0; x < WIDTH; x++) {
-            if (black >> (x + y * WIDTH) & 1) putchar('#');
-            else if (white >> (x + y * WIDTH) & 1) putchar('.');
-            else putchar(' ');
-            putchar(' ');
-        }
-        putchar('\n');
+void view(long unsigned int black, long unsigned int white) {
+    for (int i = 0; i < WIDTH * HEIGHT; i++) {
+        if (black >> i & 1) putchar(BLACK);
+        else if (white >> i & 1) putchar(WHITE);
+        else putchar(NONE);
+        putchar(NONE);
+
+        if (!((i + 1) % 8)) putchar('\n');
     }
     putchar('\n');
 }
 
 int main() {
     long unsigned int black = c2b(3, 3) | c2b(4, 4), white = c2b(3, 4) | c2b(4, 3);
-    int turn = 0;
+    view(black, white);
 
-    while (turn++) {
+    int turn = 64;
+    while (turn--) {
         int x, y;
-        printf("x<< ");
-        scanf("%d", &x);
-        printf("y<< ");
-        scanf("%d", &y);
+
+        do {
+            printf("x<< ");
+            scanf("%d", &x);
+            printf("y<< ");
+            scanf("%d", &y);
+        } while (x < 0 || x > 7 || y < 0 || y > 7);
 
         long unsigned int hand = c2b(x, y);
         if (turn % 2) black |= hand;
         else white |= hand;
 
-        printb(black, white);
+        view(black, white);
     }
 }
