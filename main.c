@@ -26,18 +26,12 @@ void printb(long unsigned int bitset) {
     putchar('\n');
 }
 
-typedef struct Board {
-    long unsigned int black, white;
-} Board;
-
-Board create_board() {
-    Board board;
-    board.black = c2b(3, 3) | c2b(4, 4);
-    board.white = c2b(3, 4) | c2b(4, 3);
-
-    return board;
-}
-
 int main() {
-    Board board = create_board();
+    long unsigned int black = c2b(3, 3) | c2b(4, 4), white = c2b(3, 4) | c2b(4, 3);
+
+    while (1) {
+        int x, y;
+        scanf("x<< %d", &x);
+        scanf("y<< %d", &x);
+    }
 }
