@@ -2,8 +2,9 @@
 
 #define WIDTH 8
 #define HEIGHT 8
-#define BLACK '*'
-#define WHITE '.'
+#define BLACK 'o'
+#define WHITE 'x'
+#define PLACABLE '.'
 #define NONE ' '
 
 long unsigned int c2b(int x, int y) {
