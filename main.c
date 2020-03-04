@@ -33,9 +33,6 @@
 #define VMASK 0x00ffffffffffff00ul
 #endif
 
-// full mask for searching placable cell
-#define DMASK HMASK & VMASK
-
 int countb(unsigned long num) {
     num = (num >> 1  & 0x5555555555555555ul) + (num & 0x5555555555555555ul);
     num = (num >> 2  & 0x3333333333333333ul) + (num & 0x3333333333333333ul);
@@ -87,7 +84,7 @@ unsigned long get_placable(unsigned long p1, unsigned long p2) {
     unsigned long
         hw = p2 & HMASK,
         vw = p2 & VMASK,
-        dw = p2 & DMASK,
+        dw = hw & vw,
 
         lb  = hw & (p1 >> 1),
         rb  = hw & (p1 << 1),
