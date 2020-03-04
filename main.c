@@ -139,8 +139,7 @@ int main() {
             scanf("%d", &x);
             printf("y<< ");
             scanf("%d", &y);
-            x--, y--;
-            hand = c2b(x, y);
+            hand = c2b(--x, --y);
         } while (!(hand & placable));
 
         if (turn % 2) black |= hand;
