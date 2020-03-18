@@ -1,38 +1,21 @@
 #include<stdio.h>
 
-#define WIDTH 8
-#define HEIGHT 8
-#define BLACK '*'
-#define WHITE 'o'
-#define PLACABLE '.'
-#define NONE ' '
+#define WIDTH 8      // width of board
+#define HEIGHT 8     // height (same as width)
+#define BLACK '*'    // what represents black's piece
+#define WHITE 'o'    // white
+#define PLACABLE '.' // placable cells
+#define NONE ' '     // for spaces
 
-// horizontal mask for searching placable cell
-#if WIDTH == 4
-#define HMASK 0x6060606060606060ul
-#elif WIDTH == 5
-#define HMASK 0x7070707070707070ul
-#elif WIDTH == 6
-#define HMASK 0x7878787878787878ul
-#elif WIDTH == 7
-#define HMASK 0x7c7c7c7c7c7c7c7cul
-#else
-#define HMASK 0x7e7e7e7e7e7e7e7eul
-#endif
+// mask for searching
+#define LMASK 0xfefefefefefefefeul
+#define RMASK 0x7f7f7f7f7f7f7f7ful
+#define HMASK LMASK & RMASK
+#define TMASK 0xffffffffffffff00ul
+#define BMASK 0x00fffffffffffffful
+#define VMASK TMASK & BMASK
 
-// vertical mask for searching placable cell
-#if HEIGHT == 4
-#define VMASK 0x00f0f0f0f0f0f000ul
-#elif HEIGHT == 5
-#define VMASK 0x00f8f8f8f8f8f800ul
-#elif HEIGHT == 6
-#define VMASK 0x00fcfcfcfcfcfc00ul
-#elif HEIGHT == 7
-#define VMASK 0x00fefefefefefe00ul
-#else
-#define VMASK 0x00ffffffffffff00ul
-#endif
-
+// counts standing bit
 int countb(unsigned long num) {
     num = (num >> 1  & 0x5555555555555555ul) + (num & 0x5555555555555555ul);
     num = (num >> 2  & 0x3333333333333333ul) + (num & 0x3333333333333333ul);
@@ -42,104 +25,162 @@ int countb(unsigned long num) {
     return (num >> 32) + (num & 0x00000000fffffffful);
 }
 
+// prints bitboard
 void printb(unsigned long num) {
     putchar(' ');
-    for (int i = 1; i <= WIDTH; i++) {
-        printf(" %d", i);
-    }
+    for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
 
     for (int i = 0; i < WIDTH * HEIGHT; i++) {
         if (!(i % WIDTH)) printf("\n%d ", i / WIDTH + 1);
-        if (num >> i & 1) putchar(BLACK);
-        else putchar(NONE);
+
+        if (num >> i & 1) putchar(PLACABLE);
+        else              putchar(NONE);
         putchar(NONE);
     }
     putchar('\n');
 }
 
+// view game status
 void view(unsigned long black, unsigned long white, unsigned long placable) {
     putchar(' ');
-    for (int i = 1; i <= WIDTH; i++) {
-        printf(" %d", i);
-    }
+    for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
 
     for (int i = 0; i < WIDTH * HEIGHT; i++) {
         if (!(i % WIDTH)) printf("\n%d ", i / WIDTH + 1);
-        if (black >> i & 1) putchar(BLACK);
-        else if (white >> i & 1) putchar(WHITE);
+
+        if (black >> i & 1)         putchar(BLACK);
+        else if (white >> i & 1)    putchar(WHITE);
         else if (placable >> i & 1) putchar(PLACABLE);
-        else putchar(NONE);
+        else                        putchar(NONE);
         putchar(NONE);
     }
-    putchar('\n');
+    puts("\n");
+
     printf("BLACK %d : %d WHITE\n", countb(black), countb(white));
 }
 
+// coordinate to bitboard
 unsigned long c2b(int x, int y) {
     if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) return 0;
-    else return 1lu << (y * WIDTH + x);
+    else                                             return 1lu << (y * WIDTH + x);
 }
 
-unsigned long get_placable(unsigned long p1, unsigned long p2) {
+// returns placable cell
+unsigned long get_placable(unsigned long p, unsigned long o) {
     unsigned long
-        hw = p2 & HMASK,
-        vw = p2 & VMASK,
-        dw = hw & vw,
+        hm = o & HMASK,
+        vm = o & VMASK,
+        dw = hm & vm,
 
-        lb  = hw & (p1 >> 1),
-        rb  = hw & (p1 << 1),
-        tb  = vw & (p1 >> WIDTH),
-        bb  = vw & (p1 << WIDTH),
-        ltb = dw & (p1 >> WIDTH + 1),
-        lbb = dw & (p1 << WIDTH - 1),
-        rtb = dw & (p1 >> WIDTH - 1),
-        rbb = dw & (p1 << WIDTH + 1);
+        hb  = hm & (p >> 1 | p << 1),
+        vb  = vm & (p >> WIDTH | p << WIDTH),
+        db1 = dw & (p >> (WIDTH + 1) | p << (WIDTH + 1)),
+        db2 = dw & (p >> (WIDTH - 1) | p << (WIDTH - 1));
     
     for (int i = 0; i < 5; i++) {
-        lb  |= hw & (lb  >> 1);
-        rb  |= hw & (rb  << 1);
-        tb  |= vw & (tb  >> WIDTH);
-        bb  |= vw & (bb  << WIDTH);
-        ltb |= dw & (ltb >> WIDTH + 1);
-        lbb |= dw & (lbb << WIDTH - 1);
-        rtb |= dw & (rtb >> WIDTH - 1);
-        rbb |= dw & (rbb << WIDTH + 1);
+        hb  |= hm & (hb >> 1 | hb << 1);
+        vb  |= vm & (vb >> WIDTH | vb << WIDTH);
+        db1 |= dw & (db1 >> (WIDTH + 1) | db1 << (WIDTH + 1));
+        db2 |= dw & (db2 >> (WIDTH - 1) | db2 << (WIDTH - 1));
     }
 
-    lb  >>= 1,
-    rb  <<= 1,
-    tb  >>= WIDTH,
-    bb  <<= WIDTH,
-    ltb >>= WIDTH + 1,
-    lbb <<= WIDTH - 1,
-    rtb >>= WIDTH - 1,
-    rbb <<= WIDTH + 1;
+    hb  = hb >> 1 | hb << 1;
+    vb  = vb >> WIDTH | vb << WIDTH;
+    db1 = db1 >> (WIDTH + 1) | db1 << (WIDTH + 1);
+    db2 = db2 >> (WIDTH - 1) | db2 << (WIDTH - 1);
 
-    return ~(p1 | p2) & (lb | rb | tb | bb | ltb | lbb | rtb | rbb);
+    return ~(p | o) & (hb | vb | db1 | db2);
+}
+
+unsigned long transfer(unsigned long hand, unsigned long mask, int dir) {
+    if (dir > 0) hand >>= dir;
+    else         hand <<= -dir;
+    return mask & hand;
+}
+
+unsigned long flip(unsigned long hand, unsigned long *p, unsigned long *o) {
+    int dir[] = {
+        -1, 1,
+        1 - WIDTH, WIDTH - 1,
+        -WIDTH, WIDTH,
+        -1 - WIDTH, WIDTH + 1
+    };
+    unsigned long
+        mask[] = {
+            LMASK, RMASK,
+            RMASK & TMASK, LMASK & BMASK,
+            TMASK, BMASK,
+            LMASK & TMASK, RMASK & BMASK
+        }, rev = 0;
+
+    for (int i = 0; i < 8; i++) {
+        unsigned long _rev = 0, trans = hand;
+
+        while ((trans = transfer(trans, mask[i], dir[i])) && trans & *o) _rev |= trans;
+        if (trans & *p) rev |= _rev;
+    }
+
+    *p ^= hand | rev;
+    *o ^= rev;
+
+    return rev;
+}
+
+void end(unsigned long black, unsigned long white) {
+    int
+        bcount = countb(black),
+        wcount = countb(white);
+
+    puts("Game finished.");
+
+    if (bcount > wcount) puts("Winner: Black");
+    else if (wcount > bcount) puts("Winner: White");
+    else puts("Draw");
 }
 
 int main() {
     unsigned long 
         black = c2b(WIDTH / 2 - 1, HEIGHT / 2 - 1) | c2b(WIDTH / 2, HEIGHT / 2),
         white = c2b(WIDTH / 2 - 1, HEIGHT / 2)     | c2b(WIDTH / 2, HEIGHT / 2 - 1),
-        placable = 0, hand, turn = WIDTH * HEIGHT;
+        placable = 0, hand, rev = 0;
+
+    int turn = WIDTH * HEIGHT, pflag = 0;
 
     while (turn--) {
-        if (turn % 2) placable = get_placable(black, white);
-        else placable = get_placable(white, black);
+        if (turn % 2) puts("\nBlack's turn\n"), placable = get_placable(black, white);
+        else          puts("\nWhite's turn\n"), placable = get_placable(white, black);
 
         view(black, white, placable);
 
-        int x, y;
+        if (!placable) {
+            pflag++;
+            if (pflag == 1) {
+                puts("Pass");
+                continue;
+            } else {
+                view(black, white, placable);
+                end(black, white);
+                return 0;
+            }
+        } else pflag = 0;
+        
+        int flag = 0;
+
         do {
-            printf("x<< ");
-            scanf("%d", &x);
-            printf("y<< ");
-            scanf("%d", &y);
-            hand = c2b(--x, --y);
+            char x;
+            int y;
+
+            if (flag) puts("Invaild Input.");
+            else      flag++;
+
+            printf("Input<< ");
+            scanf("%c%d", &x, &y);
+
+            hand = c2b(x - 65, --y);
+            scanf("%c", &x);
         } while (!(hand & placable));
 
-        if (turn % 2) black |= hand;
-        else white |= hand;
+        if (turn % 2) rev = flip(hand, &black, &white);
+        else          rev = flip(hand, &white, &black);
     }
 }
