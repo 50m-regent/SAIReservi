@@ -217,18 +217,34 @@ void end(
 
 int main() {
     unsigned long 
+        // 黒初期配置
         black = c2b(WIDTH / 2 - 1, HEIGHT / 2 - 1) | c2b(WIDTH / 2, HEIGHT / 2),
+        // 白初期配置
         white = c2b(WIDTH / 2 - 1, HEIGHT / 2)     | c2b(WIDTH / 2, HEIGHT / 2 - 1),
-        placable = 0, hand, rev = 0;
+        // 置ける場所
+        placable = 0,
+        // 手
+        hand,
+        // ひっくり返す
+        rev = 0;
 
-    int turn = WIDTH * HEIGHT, pflag = 0;
 
+    int
+        // 経過ターン(64から0)
+        turn = WIDTH * HEIGHT,
+        // パスしたかどうかのフラグ
+        pflag = 0;
+
+    // ずっとループ
     while (turn--) {
+        // 黒のターン
         if (turn % 2) puts("\nBlack's turn\n"), placable = get_placable(black, white);
+        // 白のターン
         else          puts("\nWhite's turn\n"), placable = get_placable(white, black);
 
         view(black, white, placable);
 
+        // パス処理
         if (!placable) {
             pflag++;
             if (pflag == 1) {
@@ -241,22 +257,27 @@ int main() {
             }
         } else pflag = 0;
 
-        int flag = 0;
+        // 初回かどうか
+        int is_first_time = 0;
 
+        // 入力処理
         do {
             char x;
             int y;
 
-            if (flag) puts("Invaild Input.");
-            else      flag++;
+            // 初回じゃなければ警告
+            if (is_first_time) puts("Invaild Input.");
+            else               is_first_time++;
 
+            
             printf("Input<< ");
             scanf("%c%d", &x, &y);
 
             hand = c2b(x - 65, --y);
             scanf("%c", &x);
-        } while (!(hand & placable));
+        } while (!(hand & placable)); // 有効手じゃない間ループ
 
+        // 反転処理
         if (turn % 2) rev = flip(hand, &black, &white);
         else          rev = flip(hand, &white, &black);
     }
