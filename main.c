@@ -8,14 +8,18 @@
 #define NONE ' '     // for spaces
 
 // mask for searching
-#define LMASK 0xfefefefefefefefeul
-#define RMASK 0x7f7f7f7f7f7f7f7ful
-#define HMASK LMASK & RMASK
-#define TMASK 0xffffffffffffff00ul
-#define BMASK 0x00fffffffffffffful
-#define VMASK TMASK & BMASK
+#define LMASK 0xfefefefefefefefeul // Left
+#define RMASK 0x7f7f7f7f7f7f7f7ful // Right
+#define HMASK LMASK & RMASK        // Horizontal
+#define TMASK 0xffffffffffffff00ul // Top
+#define BMASK 0x00fffffffffffffful // Bottom
+#define VMASK TMASK & BMASK        // Vertical
 
-// counts standing bit
+/*
+ * @brief Counts standing bit
+ * @param num: 数える対象
+ * @return number of standing bit
+*/
 int countb(unsigned long num) {
     num = (num >> 1  & 0x5555555555555555ul) + (num & 0x5555555555555555ul);
     num = (num >> 2  & 0x3333333333333333ul) + (num & 0x3333333333333333ul);
@@ -25,11 +29,16 @@ int countb(unsigned long num) {
     return (num >> 32) + (num & 0x00000000fffffffful);
 }
 
-// prints bitboard
+/*
+ * @brief Prints bitboard
+ * @param num: print対象
+*/
 void printb(unsigned long num) {
+    // あの上のあれ
     putchar(' ');
     for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
 
+    // loop for 64 bits
     for (int i = 0; i < WIDTH * HEIGHT; i++) {
         if (!(i % WIDTH)) printf("\n%d ", i / WIDTH + 1);
 
@@ -40,8 +49,17 @@ void printb(unsigned long num) {
     putchar('\n');
 }
 
-// view game status
-void view(unsigned long black, unsigned long white, unsigned long placable) {
+/*
+ * @brief View game status
+ * @params black:    black's bitboard
+ *         white:    white's bitboard
+ *         placable: bitboard representing placable cells
+*/
+void view(
+    unsigned long black,
+    unsigned long white,
+    unsigned long placable
+) {
     putchar(' ');
     for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
 
@@ -59,14 +77,35 @@ void view(unsigned long black, unsigned long white, unsigned long placable) {
     printf("BLACK %d : %d WHITE\n", countb(black), countb(white));
 }
 
-// coordinate to bitboard
-unsigned long c2b(int x, int y) {
-    if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) return 0;
-    else                                             return 1lu << (y * WIDTH + x);
+/*
+ * @brief Change coordinate to bitboard
+ * @params x: x coordinate (A - H)
+ *         y: y coordinate (1 - 8)
+ * @return bitboard
+*/
+unsigned long c2b(
+    int x,
+    int y
+) {
+    if (
+        x < 0 ||
+        x >= WIDTH ||
+        y < 0 ||
+        y >= HEIGHT
+    )    return 0;
+    else return 1lu << (y * WIDTH + x);
 }
 
-// returns placable cell
-unsigned long get_placable(unsigned long p, unsigned long o) {
+/*
+ * @brief Get placable cells
+ * @params p: player's bitboard
+ *         o: opponent's bitboard
+ * @return placable cells in bitboard
+*/
+unsigned long get_placable(
+    unsigned long p,
+    unsigned long o
+) {
     unsigned long
         hm = o & HMASK,
         vm = o & VMASK,
@@ -92,25 +131,55 @@ unsigned long get_placable(unsigned long p, unsigned long o) {
     return ~(p | o) & (hb | vb | db1 | db2);
 }
 
-unsigned long transfer(unsigned long hand, unsigned long mask, int dir) {
+/*
+ * @brief Transfer cell for searching
+ * @params hand: input cell
+ *         mask: mask to prevent searching outside of board
+ *         dir:  searching direction
+ * @return transfered bitboard
+*/
+unsigned long transfer(
+    unsigned long hand,
+    unsigned long mask,
+    int dir
+) {
     if (dir > 0) hand >>= dir;
     else         hand <<= -dir;
     return mask & hand;
 }
 
-unsigned long flip(unsigned long hand, unsigned long *p, unsigned long *o) {
+/*
+ * @brief Flipping pieces
+ * @params hand: input cell
+ *         *p:   pointer of player bitboard
+ *         *o:   pointer of opponent bitboard
+ * @return flipped place in bitboard
+*/
+unsigned long flip(
+    unsigned long hand,
+    unsigned long *p,
+    unsigned long *o
+) {
     int dir[] = {
-        -1, 1,
-        1 - WIDTH, WIDTH - 1,
-        -WIDTH, WIDTH,
-        -1 - WIDTH, WIDTH + 1
+        -1,
+        1,
+        1 - WIDTH,
+        WIDTH - 1,
+        -WIDTH,
+        WIDTH,
+        -1 - WIDTH,
+        WIDTH + 1
     };
     unsigned long
         mask[] = {
-            LMASK, RMASK,
-            RMASK & TMASK, LMASK & BMASK,
-            TMASK, BMASK,
-            LMASK & TMASK, RMASK & BMASK
+            LMASK,
+            RMASK,
+            RMASK & TMASK,
+            LMASK & BMASK,
+            TMASK,
+            BMASK,
+            LMASK & TMASK,
+            RMASK & BMASK
         }, rev = 0;
 
     for (int i = 0; i < 8; i++) {
@@ -126,16 +195,24 @@ unsigned long flip(unsigned long hand, unsigned long *p, unsigned long *o) {
     return rev;
 }
 
-void end(unsigned long black, unsigned long white) {
+/*
+ * @brief Called when the game is finished.
+ * @params black: black's bitboard
+ *         white: white's bitboard
+*/
+void end(
+    unsigned long black,
+    unsigned long white
+) {
     int
         bcount = countb(black),
         wcount = countb(white);
 
     puts("Game finished.");
 
-    if (bcount > wcount) puts("Winner: Black");
+    if      (wcount < bcount) puts("Winner: Black");
     else if (wcount > bcount) puts("Winner: White");
-    else puts("Draw");
+    else                      puts("Draw");
 }
 
 int main() {
@@ -163,7 +240,7 @@ int main() {
                 return 0;
             }
         } else pflag = 0;
-        
+
         int flag = 0;
 
         do {
