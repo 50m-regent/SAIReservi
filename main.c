@@ -118,27 +118,27 @@ void end(Game game) {
     else            puts("Draw");
 }
 
-Game init() {
+Game init(int ptype, int otype) {
     Game game;
 
     game.black = c2b(WIDTH / 2 - 1, HEIGHT / 2 - 1) | c2b(WIDTH / 2, HEIGHT / 2),
     game.white = c2b(WIDTH / 2, HEIGHT / 2 - 1)     | c2b(WIDTH / 2 - 1, HEIGHT / 2),
     game.placable = 0;
 
-    game.turn  = WIDTH * HEIGHT,
-    game.pflag = 0;
+    game.turn = game.pflag = 0;
+
+    game.p.type = ptype,
+    game.o.type = otype;
     
     return game;
 }
 
-int progress(Game *game, Player b, Player w) {
-    Player p, o;
-
+int progress(Game *game) {
     // 黒のターン
-    if (game->turn % 2) puts("\nBlack's turn\n"), p = b, o = w;
+    if (game->turn % 2) puts("\nBlack's turn\n"), game->p.board = &game->black, game->o.board = &game->white;
     // 白のターン
-    else                puts("\nWhite's turn\n"), p = w, o = b;
-
+    else                puts("\nWhite's turn\n"), game->p.board = &game->white, game->o.board = &game->black;
+    
     set_placable(game);
     view(*game);
 
@@ -164,15 +164,15 @@ int progress(Game *game, Player b, Player w) {
         int y;
 
         // 初回じゃなければ警告
-        if (is_first_time && p.type == 0) puts("Invaild Input.");
+        if (is_first_time && game->p.type == 0) puts("Invaild Input.");
         else               is_first_time++;
 
-        if (p.type == 0) {
+        if (game->p.type == 0) {
             printf("Input<< ");
             scanf("%c%d", &x, &y);
-        } else if (p.type == 1) {
+        } else if (game->p.type == 1) {
             x = 65 + rand() % 8;
-            y = rand() % 8;
+            y = 1  + rand() % 8;
         } else {
 
         }
@@ -189,13 +189,17 @@ int progress(Game *game, Player b, Player w) {
 int main() {
     srand(time(NULL));
 
-    Game game = init();
-    Player b, w;
-    b.type = 0,
-    w.type = 1;
+    Game game = init(0, 1);
 
     // ずっとループ
-    while (game.turn--) if (progress(&game, b, w)) break;
+    while (++game.turn) {
+        if (progress(&game)) break;
+
+        // ターンチェンジ
+        game.p.type += game.o.type,
+        game.o.type  = game.p.type - game.o.type,
+        game.p.type -= game.o.type;
+    }
 
     return 0;
 }

@@ -18,8 +18,12 @@
 #define VMASK TMASK & BMASK        // Vertical
 
 typedef struct {
+    int type;             // 0: 人間, 1: ランダム, 2: 探索
+    unsigned long *board; // そいつの盤面
+} Player;
+
+typedef struct {
     unsigned long 
-        
         black,    // 黒の盤面
         white,    // 白の盤面
         placable, // 合法手
@@ -28,11 +32,10 @@ typedef struct {
     int
         turn,  // ターン数
         pflag; // パスしたかどうか
+    Player 
+        p, // 自分
+        o; // 相手
 } Game;
-
-typedef struct {
-    int type; // 0: 人間, 1: ランダム, 2: 探索
-} Player;
 
 // 探索方向(ビットシフト数)
 const int dir[] = {
@@ -140,4 +143,4 @@ Game init();
  *         w:     player2
  * @return flag 0: game continues, 1: game ends
 */
-int progress(Game *game, Player b, Player w);
+int progress(Game *game);
