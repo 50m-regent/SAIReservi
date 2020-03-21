@@ -4,6 +4,7 @@
 
 #define WIDTH 8      // width of board
 #define HEIGHT 8     // height (same as width)
+#define SEARCH_DEPTH 3
 #define BLACK '*'    // what represents black's piece
 #define WHITE 'o'    // white
 #define PLACABLE '.' // placable cells
@@ -31,7 +32,8 @@ typedef struct {
         rev;      // 前のターンにひっくり返した場所
     int
         turn,  // ターン数
-        pflag; // パスしたかどうか
+        pflag, // パスしたかどうか
+        score; // 盤面の得点(AI用)
     Player 
         p, // 自分
         o; // 相手

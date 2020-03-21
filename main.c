@@ -106,6 +106,16 @@ void flip(Game *game) {
     *o ^= rev;
 }
 
+void change(Game *game) {
+    unsigned long *tmp = game->p.board;
+    game->p.board = game->o.board,
+    game->o.board = tmp;
+
+    game->p.type += game->o.type,
+    game->o.type  = game->p.type - game->o.type,
+    game->p.type -= game->o.type;
+}
+
 void end(Game game) {
     int
         b = countb(game.black),
@@ -168,17 +178,76 @@ void get_random_input(Game *game) {
     } while (!(game->hand & game->placable)); // 有効手じゃない間ループ
 }
 
+void evaluate(Game *game, int *score) {
+    /*
+        scoreは大きさ9の配列のポインタ
+        0 1 2 3 3 2 1 0
+        1 4 5 6 6 5 4 1
+        2 5 7 8 8 7 5 2
+        3 6 8 x x 8 6 3
+        3 6 8 x x 8 6 3
+        2 5 7 8 8 7 5 2
+        1 4 5 6 6 5 4 1
+        0 1 2 3 3 2 1 0
+        みたいに盤面のますごとの点数を格納しておく。
+    */
+    int points[] = {
+        score[0], score[1], score[2], score[3], score[3], score[2], score[1], score[0],
+        score[1], score[4], score[5], score[6], score[6], score[5], score[4], score[1],
+        score[2], score[5], score[7], score[8], score[8], score[7], score[5], score[2],
+        score[3], score[6], score[8],        0,        0, score[8], score[6], score[3],
+    }, black = 0, white = 0;
+
+    for (int i = 0; i < WIDTH * HEIGHT; i++) {
+        if (game->black >> i & 1)      black += i < 32 ? points[i] : points[64 - i];
+        else if (game->white >> i & 1) white += i < 32 ? points[i] : points[64 - i];
+    }
+
+    game->score = game->turn % 2 ? black - white : white - black;
+}
+
+void get_ai_input(Game *game, int depth) {
+    int score[] = {
+        30, -12,  0, -1,
+            -15, -3, -3,
+                  0, -1
+    };
+
+    if (depth == SEARCH_DEPTH) {
+        evaluate(game, score);
+        return;
+    }
+
+    if (depth % 2) game->score = 1e8;
+    else           game->score = -1e8;
+
+    for (int i = 0; i < WIDTH * HEIGHT; i++) {
+        if (game->placable >> i & 1) {
+            Game _game = *game;
+            _game.hand = 1lu << i;
+            _game.turn++;
+            set_placable(&_game);
+            flip(&_game);
+            change(&_game);
+
+            get_ai_input(&_game, depth + 1);
+
+            if (
+                (depth % 2    && game->score < _game.score) ||
+                (!(depth % 2) && game->score < _game.score)
+            ) game->hand = _game.hand;
+        }
+    }
+}
+
 int main() {
     srand(time(NULL));
 
-    Game game = init(1, 1);
+    Game game = init(0, 2);
 
     // ずっとループ
     while (++game.turn) {
-        // 黒のターン
-        if (game.turn % 2) puts("\nBlack's turn\n");
-        // 白のターン
-        else               puts("\nWhite's turn\n");
+        game.turn % 2 ? puts("\nBlack's turn\n") : puts("\nWhite's turn\n");
 
         set_placable(&game);
         view(game);
@@ -196,23 +265,11 @@ int main() {
             }
         } else game.pflag = 0;
 
-        if (game.p.type == 0) {
-            get_human_input(&game);
-        } else if (game.p.type == 1) {
-            get_random_input(&game);
-        } else {
-
-        }
+        if (game.p.type == 0)      get_human_input(&game);
+        else if (game.p.type == 1) get_random_input(&game);
+        else                       get_ai_input(&game, 0);
 
         flip(&game);
-
-        // ターンチェンジ
-        unsigned long *tmp = game.p.board;
-        game.p.board = game.o.board,
-        game.o.board = tmp;
-
-        game.p.type += game.o.type,
-        game.o.type  = game.p.type - game.o.type,
-        game.p.type -= game.o.type;
+        change(&game);
     }
 }
