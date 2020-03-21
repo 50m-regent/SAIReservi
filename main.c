@@ -127,34 +127,15 @@ Game init(int ptype, int otype) {
 
     game.turn = game.pflag = 0;
 
+    game.p.board = &game.black, game.o.board = &game.white,
+
     game.p.type = ptype,
     game.o.type = otype;
     
     return game;
 }
 
-int progress(Game *game) {
-    // 黒のターン
-    if (game->turn % 2) puts("\nBlack's turn\n"), game->p.board = &game->black, game->o.board = &game->white;
-    // 白のターン
-    else                puts("\nWhite's turn\n"), game->p.board = &game->white, game->o.board = &game->black;
-    
-    set_placable(game);
-    view(*game);
-
-    // パス処理
-    if (!game->placable) {
-        game->pflag++;
-        if (game->pflag == 1) {
-            puts("Pass");
-            return 0;
-        } else {
-            view(*game);
-            end(*game);
-            return 1;
-        }
-    } else game->pflag = 0;
-
+void get_human_input(Game *game) {
     // 初回かどうか
     int is_first_time = 0;
 
@@ -164,42 +145,74 @@ int progress(Game *game) {
         int y;
 
         // 初回じゃなければ警告
-        if (is_first_time && game->p.type == 0) puts("Invaild Input.");
+        if (is_first_time) puts("Invaild Input.");
         else               is_first_time++;
 
-        if (game->p.type == 0) {
-            printf("Input<< ");
-            scanf("%c%d", &x, &y);
-        } else if (game->p.type == 1) {
-            x = 65 + rand() % 8;
-            y = 1  + rand() % 8;
-        } else {
-
-        }
+        printf("Input<< ");
+        scanf("%c%d", &x, &y);
         
         game->hand = c2b(x - 65, --y);
     } while (!(game->hand & game->placable)); // 有効手じゃない間ループ
+}
 
-    // 反転処理
-    flip(game);
+void get_random_input(Game *game) {
+    // 入力処理
+    do {
+        char x;
+        int y;
 
-    return 0;
+        x = rand() % 8;
+        y = rand() % 8;
+        
+        game->hand = c2b(x, y);
+    } while (!(game->hand & game->placable)); // 有効手じゃない間ループ
 }
 
 int main() {
     srand(time(NULL));
 
-    Game game = init(0, 1);
+    Game game = init(1, 1);
 
     // ずっとループ
     while (++game.turn) {
-        if (progress(&game)) break;
+        // 黒のターン
+        if (game.turn % 2) puts("\nBlack's turn\n");
+        // 白のターン
+        else               puts("\nWhite's turn\n");
+
+        set_placable(&game);
+        view(game);
+
+        // パス処理
+        if (!game.placable) {
+            game.pflag++;
+            if (game.pflag == 1) {
+                puts("Pass");
+                continue;
+            } else {
+                view(game);
+                end(game);
+                return 0;
+            }
+        } else game.pflag = 0;
+
+        if (game.p.type == 0) {
+            get_human_input(&game);
+        } else if (game.p.type == 1) {
+            get_random_input(&game);
+        } else {
+
+        }
+
+        flip(&game);
 
         // ターンチェンジ
+        unsigned long *tmp = game.p.board;
+        game.p.board = game.o.board,
+        game.o.board = tmp;
+
         game.p.type += game.o.type,
         game.o.type  = game.p.type - game.o.type,
         game.p.type -= game.o.type;
     }
-
-    return 0;
 }
