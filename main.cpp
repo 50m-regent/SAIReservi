@@ -1,4 +1,4 @@
-#include<stdio.h>
+#include<iostream>
 
 #define WIDTH 8      // width of board
 #define HEIGHT 8     // height (same as width)
@@ -15,123 +15,145 @@
 #define BMASK 0x00fffffffffffffful // Bottom
 #define VMASK TMASK & BMASK        // Vertical
 
-typedef struct {
-    unsigned long black, white, placable, hand, rev;
-    int turn, pflag;
-} Game;
+class Bitboard {
+public:
+    unsigned long num;
 
-/*
- * @brief Counts standing bit
- * @param num: 数える対象
- * @return number of standing bit
-*/
-int countb(unsigned long num) {
-    num = (num >> 1  & 0x5555555555555555ul) + (num & 0x5555555555555555ul);
-    num = (num >> 2  & 0x3333333333333333ul) + (num & 0x3333333333333333ul);
-    num = (num >> 4  & 0x0f0f0f0f0f0f0f0ful) + (num & 0x0f0f0f0f0f0f0f0ful);
-    num = (num >> 8  & 0x00ff00ff00ff00fful) + (num & 0x00ff00ff00ff00fful);
-    num = (num >> 16 & 0x0000ffff0000fffful) + (num & 0x0000ffff0000fffful);
-    return (num >> 32) + (num & 0x00000000fffffffful);
-}
+    Bitboard();
 
-/*
- * @brief Prints bitboard
- * @param num: print対象
-*/
-void printb(unsigned long num) {
-    // あの上のあれ
-    putchar(' ');
-    for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
-
-    // loop for 64 bits
-    for (int i = 0; i < WIDTH * HEIGHT; i++) {
-        if (!(i % WIDTH)) printf("\n%d ", i / WIDTH + 1);
-
-        if (num >> i & 1) putchar(PLACABLE);
-        else              putchar(NONE);
-        putchar(NONE);
-    }
-    putchar('\n');
-}
-
-/*
- * @brief View game status
- * @params black:    black's bitboard
- *         white:    white's bitboard
- *         placable: bitboard representing placable cells
-*/
-void view(Game game) {
-    putchar(' ');
-    for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
-
-    for (int i = 0; i < WIDTH * HEIGHT; i++) {
-        if (!(i % WIDTH)) printf("\n%d ", i / WIDTH + 1);
-
-        if (game.black >> i & 1)         putchar(BLACK);
-        else if (game.white >> i & 1)    putchar(WHITE);
-        else if (game.placable >> i & 1) putchar(PLACABLE);
-        else                        putchar(NONE);
-        putchar(NONE);
-    }
-    puts("\n");
-
-    printf("BLACK %d : %d WHITE\n", countb(game.black), countb(game.white));
-}
-
-/*
- * @brief Change coordinate to bitboard
- * @params x: x coordinate (A - H)
- *         y: y coordinate (1 - 8)
- * @return bitboard
-*/
-unsigned long c2b(
-    int x,
-    int y
-) {
-    if (
-        x < 0 ||
-        x >= WIDTH ||
-        y < 0 ||
-        y >= HEIGHT
-    )    return 0;
-    else return 1lu << (y * WIDTH + x);
-}
-
-/*
- * @brief Get placable cells
- * @params p: player's bitboard
- *         o: opponent's bitboard
- * @return placable cells in bitboard
-*/
-void set_placable(Game *game) {
-    unsigned long p, o;
-    if (game->turn % 2) p = game->black, o = game->white;
-    else                p = game->white, o = game->black;
-
-    unsigned long
-        hm = o & HMASK,
-        vm = o & VMASK,
-        dw = hm & vm,
-
-        hb  = hm & (p >> 1 | p << 1),
-        vb  = vm & (p >> WIDTH | p << WIDTH),
-        db1 = dw & (p >> (WIDTH + 1) | p << (WIDTH + 1)),
-        db2 = dw & (p >> (WIDTH - 1) | p << (WIDTH - 1));
-    
-    for (int i = 0; i < 5; i++) {
-        hb  |= hm & (hb >> 1 | hb << 1);
-        vb  |= vm & (vb >> WIDTH | vb << WIDTH);
-        db1 |= dw & (db1 >> (WIDTH + 1) | db1 << (WIDTH + 1));
-        db2 |= dw & (db2 >> (WIDTH - 1) | db2 << (WIDTH - 1));
+    Bitboard(int x, int y) {
+        if (
+            x < 0 ||
+            x >= WIDTH ||
+            y < 0 ||
+            y >= HEIGHT
+        )    num= 0;
+        else num = 1lu << (y * WIDTH + x);
     }
 
-    hb  = hb >> 1 | hb << 1;
-    vb  = vb >> WIDTH | vb << WIDTH;
-    db1 = db1 >> (WIDTH + 1) | db1 << (WIDTH + 1);
-    db2 = db2 >> (WIDTH - 1) | db2 << (WIDTH - 1);
+    Bitboard operator = (int x) {
+        num = x;
+        return *this;
+    }
 
-    game->placable = ~(p | o) & (hb | vb | db1 | db2);
-}
+    Bitboard operator ~ () {
+        num = ~num;
+        return *this;
+    }
+
+    Bitboard operator | (Bitboard x) {
+        num |= x.num;
+        return *this;
+    }
+
+    Bitboard operator |= (Bitboard x) {
+        num |= x.num;
+        return *this;
+    }
+
+    Bitboard operator & (int x) {
+        num &= x;
+        return *this;
+    }
+
+    Bitboard operator & (Bitboard x) {
+        num &= x.num;
+        return *this;
+    }
+
+    Bitboard operator >> (int x) {
+        num >>= x;
+        return *this;
+    }
+
+    Bitboard operator << (int x) {
+        num <<= x;
+        return *this;
+    }
+
+    int count() {
+        num = (num >> 1  & 0x5555555555555555ul) + (num & 0x5555555555555555ul);
+        num = (num >> 2  & 0x3333333333333333ul) + (num & 0x3333333333333333ul);
+        num = (num >> 4  & 0x0f0f0f0f0f0f0f0ful) + (num & 0x0f0f0f0f0f0f0f0ful);
+        num = (num >> 8  & 0x00ff00ff00ff00fful) + (num & 0x00ff00ff00ff00fful);
+        num = (num >> 16 & 0x0000ffff0000fffful) + (num & 0x0000ffff0000fffful);
+        return (num >> 32) + (num & 0x00000000fffffffful);
+    }
+
+    void print() {
+        putchar(' ');
+        for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
+
+        for (int i = 0; i < WIDTH * HEIGHT; i++) {
+            if (!(i % WIDTH)) printf("\n%d ", i / WIDTH + 1);
+
+            if (num >> i & 1) putchar(PLACABLE);
+            else              putchar(NONE);
+            putchar(NONE);
+        }
+        putchar('\n');
+    }
+};
+
+class Game {
+public:
+    Bitboard black, white, placable, hand, rev, *p, *o;
+    int turn;
+    bool pflag;
+
+    Game() {
+        black = Bitboard(WIDTH / 2 - 1, HEIGHT / 2 - 1) | Bitboard(WIDTH / 2, HEIGHT / 2),
+        white = Bitboard(WIDTH / 2, HEIGHT / 2 - 1)     | Bitboard(WIDTH / 2 - 1, HEIGHT / 2),
+        placable = 0;
+
+        turn  = WIDTH * HEIGHT,
+        pflag = 0;
+    }
+
+    void view() {
+        putchar(' ');
+        for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
+
+        for (int i = 0; i < WIDTH * HEIGHT; i++) {
+            if (!(i % WIDTH)) printf("\n%d ", i / WIDTH + 1);
+
+            if ((black >> i & 1).count())         putchar(BLACK);
+            else if ((white >> i & 1).count())    putchar(WHITE);
+            else if ((placable >> i & 1).count()) putchar(PLACABLE);
+            else                                  putchar(NONE);
+            putchar(NONE);
+        }
+        puts("\n");
+
+        printf("BLACK %d : %d WHITE\n", black.count(), white.count());
+    }
+
+    void set_placable() {
+        Bitboard
+            hm = *o & HMASK,
+            vm = *o & VMASK,
+            dw = hm & vm,
+
+            hb  = hm & (*p >> 1 | *p << 1),
+            vb  = vm & (*p >> WIDTH | *p << WIDTH),
+            db1 = dw & (*p >> (WIDTH + 1) | *p << (WIDTH + 1)),
+            db2 = dw & (*p >> (WIDTH - 1) | *p << (WIDTH - 1));
+        
+        for (int i = 0; i < 5; i++) {
+            hb  |= hm & (hb >> 1 | hb << 1);
+            vb  |= vm & (vb >> WIDTH | vb << WIDTH);
+            db1 |= dw & (db1 >> (WIDTH + 1) | db1 << (WIDTH + 1));
+            db2 |= dw & (db2 >> (WIDTH - 1) | db2 << (WIDTH - 1));
+        }
+
+        hb  = hb >> 1 | hb << 1;
+        vb  = vb >> WIDTH | vb << WIDTH;
+        db1 = db1 >> (WIDTH + 1) | db1 << (WIDTH + 1);
+        db2 = db2 >> (WIDTH - 1) | db2 << (WIDTH - 1);
+
+        placable = ~(*p | *o) & (hb | vb | db1 | db2);
+    }
+};
 
 /*
  * @brief Transfer cell for searching
