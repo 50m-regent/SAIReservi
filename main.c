@@ -222,55 +222,61 @@ void init(Game *game) {
     game->pflag = 0;
 }
 
+int progress(Game *game) {
+    // 黒のターン
+    if (game->turn % 2) puts("\nBlack's turn\n");
+    // 白のターン
+    else               puts("\nWhite's turn\n");
+
+    set_placable(game);
+    view(*game);
+
+    // パス処理
+    if (!game->placable) {
+        game->pflag++;
+        if (game->pflag == 1) {
+            puts("Pass");
+            return 0;
+        } else {
+            view(*game);
+            end(*game);
+            return 1;
+        }
+    } else game->pflag = 0;
+
+    // 初回かどうか
+    int is_first_time = 0;
+
+    // 入力処理
+    do {
+        char x;
+        int y;
+
+        // 初回じゃなければ警告
+        if (is_first_time) puts("Invaild Input.");
+        else               is_first_time++;
+
+        
+        printf("Input<< ");
+        scanf("%c%d", &x, &y);
+
+        game->hand = c2b(x - 65, --y);
+        scanf("%c", &x);
+    } while (!(game->hand & game->placable)); // 有効手じゃない間ループ
+
+    // 反転処理
+    flip(game);
+
+    return 0;
+}
+
 int main() {
     Game game;
-
     init(&game);
 
     // ずっとループ
     while (game.turn--) {
-        // 黒のターン
-        if (game.turn % 2) puts("\nBlack's turn\n");
-        // 白のターン
-        else               puts("\nWhite's turn\n");
-
-        set_placable(&game);
-        view(game);
-
-        // パス処理
-        if (!game.placable) {
-            game.pflag++;
-            if (game.pflag == 1) {
-                puts("Pass");
-                continue;
-            } else {
-                view(game);
-                end(game);
-                return 0;
-            }
-        } else game.pflag = 0;
-
-        // 初回かどうか
-        int is_first_time = 0;
-
-        // 入力処理
-        do {
-            char x;
-            int y;
-
-            // 初回じゃなければ警告
-            if (is_first_time) puts("Invaild Input.");
-            else               is_first_time++;
-
-            
-            printf("Input<< ");
-            scanf("%c%d", &x, &y);
-
-            game.hand = c2b(x - 65, --y);
-            scanf("%c", &x);
-        } while (!(game.hand & game.placable)); // 有効手じゃない間ループ
-
-        // 反転処理
-        flip(&game);
+        if (progress(&game)) break;
     }
+    return 0;
 }

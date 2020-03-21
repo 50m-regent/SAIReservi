@@ -1,27 +1,29 @@
-#include<iostream>
+#include<stdio.h>
 
-#define WIDTH 8      // width of board
-#define HEIGHT 8     // height (same as width)
-#define BLACK '*'    // what represents black's piece
-#define WHITE 'o'    // white
-#define PLACABLE '.' // placable cells
-#define NONE ' '     // for spaces
+#define WIDTH 8
+#define HEIGHT 8
+#define BLACK '*'
+#define WHITE 'o'
+#define PLACABLE '.'
+#define NONE ' '
 
-// mask for searching
-#define LMASK 0xfefefefefefefefeul // Left
-#define RMASK 0x7f7f7f7f7f7f7f7ful // Right
-#define HMASK LMASK & RMASK        // Horizontal
-#define TMASK 0xffffffffffffff00ul // Top
-#define BMASK 0x00fffffffffffffful // Bottom
-#define VMASK TMASK & BMASK        // Vertical
+#define LMASK 0xfefefefefefefefeul
+#define RMASK 0x7f7f7f7f7f7f7f7ful
+#define HMASK LMASK & RMASK
+#define TMASK 0xffffffffffffff00ul
+#define BMASK 0x00fffffffffffffful
+#define VMASK TMASK & BMASK
 
 class Bitboard {
-public:
+private:
     unsigned long num;
 
-    Bitboard();
+public:
+    Bitboard () {};
 
-    Bitboard(int x, int y) {
+    Bitboard (unsigned long x) {num = x;}
+
+    Bitboard (int x, int y) {
         if (
             x < 0 ||
             x >= WIDTH ||
@@ -31,53 +33,53 @@ public:
         else num = 1lu << (y * WIDTH + x);
     }
 
-    Bitboard operator = (int x) {
+    Bitboard operator = (unsigned long x) {
         num = x;
         return *this;
     }
 
-    Bitboard operator ~ () {
-        num = ~num;
-        return *this;
-    }
+    Bitboard operator ~ () {return Bitboard(~num);}
 
-    Bitboard operator | (Bitboard x) {
-        num |= x.num;
-        return *this;
-    }
+    Bitboard operator | (Bitboard x) {return Bitboard(num | x.num);}
 
     Bitboard operator |= (Bitboard x) {
         num |= x.num;
         return *this;
     }
 
-    Bitboard operator & (int x) {
-        num &= x;
+    Bitboard operator & (unsigned long x) {return Bitboard(num & x);}
+
+    Bitboard operator & (Bitboard x) {return Bitboard(num & x.num);}
+
+    Bitboard operator ^= (Bitboard x) {
+        num ^= x.num;
         return *this;
     }
 
-    Bitboard operator & (Bitboard x) {
-        num &= x.num;
-        return *this;
-    }
+    bool operator && (Bitboard x) {return num && x.num;}
 
-    Bitboard operator >> (int x) {
+    Bitboard operator >> (int x) {return Bitboard(num >> x);}
+
+    Bitboard operator >>= (int x) {
         num >>= x;
         return *this;
     }
 
-    Bitboard operator << (int x) {
+    Bitboard operator << (int x) {return Bitboard(num << x);}
+
+    Bitboard operator <<= (int x) {
         num <<= x;
         return *this;
     }
 
     int count() {
-        num = (num >> 1  & 0x5555555555555555ul) + (num & 0x5555555555555555ul);
-        num = (num >> 2  & 0x3333333333333333ul) + (num & 0x3333333333333333ul);
-        num = (num >> 4  & 0x0f0f0f0f0f0f0f0ful) + (num & 0x0f0f0f0f0f0f0f0ful);
-        num = (num >> 8  & 0x00ff00ff00ff00fful) + (num & 0x00ff00ff00ff00fful);
-        num = (num >> 16 & 0x0000ffff0000fffful) + (num & 0x0000ffff0000fffful);
-        return (num >> 32) + (num & 0x00000000fffffffful);
+        unsigned long _num = num;
+        _num = (_num >> 1  & 0x5555555555555555ul) + (_num & 0x5555555555555555ul);
+        _num = (_num >> 2  & 0x3333333333333333ul) + (_num & 0x3333333333333333ul);
+        _num = (_num >> 4  & 0x0f0f0f0f0f0f0f0ful) + (_num & 0x0f0f0f0f0f0f0f0ful);
+        _num = (_num >> 8  & 0x00ff00ff00ff00fful) + (_num & 0x00ff00ff00ff00fful);
+        _num = (_num >> 16 & 0x0000ffff0000fffful) + (_num & 0x0000ffff0000fffful);
+        return (_num >> 32) + (_num & 0x00000000fffffffful);
     }
 
     void print() {
@@ -91,24 +93,25 @@ public:
             else              putchar(NONE);
             putchar(NONE);
         }
-        putchar('\n');
+        puts("\n");
+    }
+
+    Bitboard transfer(
+        Bitboard mask,
+        int dir
+    ) {
+        if (dir > 0) num >>= dir;
+        else         num <<= -dir;
+        num &= mask.num;
+        return *this;
     }
 };
 
 class Game {
-public:
+private:
     Bitboard black, white, placable, hand, rev, *p, *o;
     int turn;
     bool pflag;
-
-    Game() {
-        black = Bitboard(WIDTH / 2 - 1, HEIGHT / 2 - 1) | Bitboard(WIDTH / 2, HEIGHT / 2),
-        white = Bitboard(WIDTH / 2, HEIGHT / 2 - 1)     | Bitboard(WIDTH / 2 - 1, HEIGHT / 2),
-        placable = 0;
-
-        turn  = WIDTH * HEIGHT,
-        pflag = 0;
-    }
 
     void view() {
         putchar(' ');
@@ -153,146 +156,105 @@ public:
 
         placable = ~(*p | *o) & (hb | vb | db1 | db2);
     }
-};
 
-/*
- * @brief Transfer cell for searching
- * @params hand: input cell
- *         mask: mask to prevent searching outside of board
- *         dir:  searching direction
- * @return transfered bitboard
-*/
-unsigned long transfer(
-    unsigned long hand,
-    unsigned long mask,
-    int dir
-) {
-    if (dir > 0) hand >>= dir;
-    else         hand <<= -dir;
-    return mask & hand;
-}
+    void flip() {
+        int dir[] = {
+            -1,
+            1,
+            1 - WIDTH,
+            WIDTH - 1,
+            -WIDTH,
+            WIDTH,
+            -1 - WIDTH,
+            WIDTH + 1
+        };
+        Bitboard
+            mask[] = {
+                LMASK,
+                RMASK,
+                RMASK & TMASK,
+                LMASK & BMASK,
+                TMASK,
+                BMASK,
+                LMASK & TMASK,
+                RMASK & BMASK
+            }, rev = 0;
 
-/*
- * @brief Flipping pieces
- * @params hand: input cell
- *         *p:   pointer of player bitboard
- *         *o:   pointer of opponent bitboard
- * @return flipped place in bitboard
-*/
-void flip(Game *game) {
-    int dir[] = {
-        // 探索方向(ビットシフト数)
-        -1,
-        1,
-        1 - WIDTH,
-        WIDTH - 1,
-        -WIDTH,
-        WIDTH,
-        -1 - WIDTH,
-        WIDTH + 1
-    };
-    unsigned long
-        // パックマンみたいにならないように端は消す
-        mask[] = {
-            LMASK,
-            RMASK,
-            RMASK & TMASK,
-            LMASK & BMASK,
-            TMASK,
-            BMASK,
-            LMASK & TMASK,
-            RMASK & BMASK
-        }, rev = 0, *p, *o;
+        for (int i = 0; i < 8; i++) {
+            Bitboard _rev = 0, trans = hand;
 
-    if (game->turn % 2) p = &game->black, o = &game->white;
-    else                p = &game->white, o = &game->black;
+            while ((trans.transfer(mask[i], dir[i])) && trans & *o) _rev |= trans;
+            if ((trans & *p).count()) rev |= _rev;
+        }
 
-    for (int i = 0; i < 8; i++) {
-        unsigned long _rev = 0, trans = game->hand;
-
-        while ((trans = transfer(trans, mask[i], dir[i])) && trans & *o) _rev |= trans;
-        if (trans & *p) rev |= _rev;
+        *p ^= hand | rev;
+        *o ^= rev;
     }
 
-    *p ^= game->hand | rev;
-    *o ^= rev;
-}
+    void end() {
+        int
+            b = black.count(),
+            w = white.count();
 
-/*
- * @brief Called when the game is finished.
- * @params black: black's bitboard
- *         white: white's bitboard
-*/
-void end(Game game) {
-    int
-        b = countb(game.black),
-        w = countb(game.white);
+        puts("Game finished.");
 
-    puts("Game finished.");
+        if      (w < b) puts("Winner: Black");
+        else if (w > b) puts("Winner: White");
+        else            puts("Draw");
+    }
 
-    if      (w < b) puts("Winner: Black");
-    else if (w > b) puts("Winner: White");
-    else            puts("Draw");
-}
+public:
+    Game() {
+        black = Bitboard(WIDTH / 2 - 1, HEIGHT / 2 - 1) | Bitboard(WIDTH / 2, HEIGHT / 2),
+        white = Bitboard(WIDTH / 2, HEIGHT / 2 - 1)     | Bitboard(WIDTH / 2 - 1, HEIGHT / 2),
+        placable = 0;
 
-void init(Game *game) {
-    game->black = c2b(WIDTH / 2 - 1, HEIGHT / 2 - 1) | c2b(WIDTH / 2, HEIGHT / 2),
-    game->white = c2b(WIDTH / 2, HEIGHT / 2 - 1)     | c2b(WIDTH / 2 - 1, HEIGHT / 2),
-    game->placable = 0;
+        turn  = WIDTH * HEIGHT,
+        pflag = 0;
+    }
 
-    game->turn  = WIDTH * HEIGHT,
-    game->pflag = 0;
-}
+    void play() {
+        while (turn--) {
+            if (turn % 2) puts("\nBlack's turn\n"), p = &black, o = &white;
+            else          puts("\nWhite's turn\n"), p = &white, o = &black;
+
+            set_placable();
+            view();
+
+            if (!placable.count()) {
+                if (pflag) {
+                    view();
+                    end();
+                    return;
+                } else {
+                    pflag = true;
+                    puts("Pass");
+                    continue;
+                }
+            } else pflag = 0;
+
+            bool is_first_time = false;
+
+            do {
+                char x;
+                int y;
+
+                if (is_first_time) puts("Invaild Input.");
+                else               is_first_time = true;
+
+                printf("Input<< ");
+                scanf("%c%d", &x, &y);
+
+                hand = Bitboard(x - 65, --y);
+            } while (!(hand & placable).count());
+
+            flip();
+        }
+    }
+};
 
 int main() {
     Game game;
-
-    init(&game);
-
-    // ずっとループ
-    while (game.turn--) {
-        // 黒のターン
-        if (game.turn % 2) puts("\nBlack's turn\n");
-        // 白のターン
-        else               puts("\nWhite's turn\n");
-
-        set_placable(&game);
-        view(game);
-
-        // パス処理
-        if (!game.placable) {
-            game.pflag++;
-            if (game.pflag == 1) {
-                puts("Pass");
-                continue;
-            } else {
-                view(game);
-                end(game);
-                return 0;
-            }
-        } else game.pflag = 0;
-
-        // 初回かどうか
-        int is_first_time = 0;
-
-        // 入力処理
-        do {
-            char x;
-            int y;
-
-            // 初回じゃなければ警告
-            if (is_first_time) puts("Invaild Input.");
-            else               is_first_time++;
-
-            
-            printf("Input<< ");
-            scanf("%c%d", &x, &y);
-
-            game.hand = c2b(x - 65, --y);
-            scanf("%c", &x);
-        } while (!(game.hand & game.placable)); // 有効手じゃない間ループ
-
-        // 反転処理
-        flip(&game);
-    }
+    game.play();
+    return 0;
 }
