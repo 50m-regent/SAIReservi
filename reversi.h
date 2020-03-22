@@ -1,14 +1,14 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
+#include<unistd.h>
 
-#define WIDTH 8      // width of board
-#define HEIGHT 8     // height (same as width)
+
 #define SEARCH_DEPTH 3
-#define BLACK '*'    // what represents black's piece
-#define WHITE 'o'    // white
-#define PLACABLE '.' // placable cells
-#define NONE ' '     // for spaces
+#define EPOCH_SIZE 1000
+#define BIAS_MIN -32
+#define BIAS_MAX 32
+
 
 // mask for searching
 #define LMASK 0xfefefefefefefefeul // Left
@@ -18,26 +18,6 @@
 #define BMASK 0x00fffffffffffffful // Bottom
 #define VMASK TMASK & BMASK        // Vertical
 
-typedef struct {
-    int type;             // 0: 人間, 1: ランダム, 2: 探索
-    unsigned long *board; // そいつの盤面
-} Player;
-
-typedef struct {
-    unsigned long 
-        black,    // 黒の盤面
-        white,    // 白の盤面
-        placable, // 合法手
-        hand,     // 手
-        rev;      // 前のターンにひっくり返した場所
-    int
-        turn,  // ターン数
-        pflag, // パスしたかどうか
-        score; // 盤面の得点(AI用)
-    Player 
-        p, // 自分
-        o; // 相手
-} Game;
 
 // 探索方向(ビットシフト数)
 const int dir[] = {
@@ -129,8 +109,15 @@ void flip(Game *game);
  * @brief Called when the game is finished.
  * @params black: black's bitboard
  *         white: white's bitboard
+ * @return winner 1: black, -1: white, 0: draw
 */
-void end(Game game);
+int end(Game game);
+
+/*
+ * @brief Change turn
+ * @params *game game data
+*/
+void change(Game *game);
 
 /*
  * @brief Preparing game data
