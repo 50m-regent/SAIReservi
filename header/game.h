@@ -5,7 +5,6 @@
 
 void flip(Data *data);
 void change_turn(Data *data);
-int finish_game(Data data);
 int play(Data data);
 
 #endif

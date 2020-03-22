@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "game.h"
+#include "header/game.h"
 
 int 
     player_seed[]   = {45, -11, 4, -1, -16, -1, -3, 2, -1},
@@ -10,7 +10,7 @@ int
 int main() {
     srand(time(NULL));
     
-    Data data = init(0, 1, player_seed, opponent_seed);
+    Data data = init(1, 1, player_seed, opponent_seed);
 
     play(data);
 }

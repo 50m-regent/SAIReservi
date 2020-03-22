@@ -44,30 +44,13 @@ void flip(Data *data) {
 }
 
 void change_turn(Data *data) {
+    printf("%d, %d\n", count_standing_bit(*data->black), count_standing_bit(*data->white));
     Player *tmp = data->player;
     data->player   = data->opponent,
     data->opponent = tmp;
     
     data->turn++;
-}
-
-int finish_game(Data data) {
-    int
-        black_count = count_standing_bit(*data.black),
-        white_count = count_standing_bit(*data.white);
-
-    if (data.debug_mode) puts("Game finished.");
-
-    if (black_count > white_count) {
-        if (data.debug_mode) puts("Winner: Black");
-        return 1;
-    } else if (black_count < white_count) {
-        if (data.debug_mode) puts("Winner: White");
-        return -1;
-    } else {
-        if (data.debug_mode) puts("Draw");
-        return 0;
-    }
+    printf("%d, %d\n", count_standing_bit(*data->black), count_standing_bit(*data->white));
 }
 
 int play(Data data) {
@@ -76,15 +59,32 @@ int play(Data data) {
 
         if(data.debug_mode) {
             data.turn % 2 ? puts("\nWhite's turn\n") : puts("\nBlack's turn\n");
-            view_game_status(data);
+            view_game_status(&data);
         }
 
         if (!data.placable) {
             data.have_passed++;
             if (data.have_passed == 1) {
-                if (data.debug_mode) puts("Pass");
+                if (data.debug_mode) puts("Pass"), change_turn(&data);
                 continue;
-            } else return finish_game(data);
+            } else {
+                int
+                    black_count = count_standing_bit(*data.black),
+                    white_count = count_standing_bit(*data.white);
+
+                if (data.debug_mode) puts("Game finished.");
+
+                if (black_count > white_count) {
+                    if (data.debug_mode) puts("Winner: Black");
+                    return 1;
+                } else if (black_count < white_count) {
+                    if (data.debug_mode) puts("Winner: White");
+                    return -1;
+                } else {
+                    if (data.debug_mode) puts("Draw");
+                    return 0;
+                }
+            }
         } else data.have_passed = 0;
 
         if (data.player->player_type == 0)      get_human_input(&data);

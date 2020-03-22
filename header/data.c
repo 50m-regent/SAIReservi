@@ -10,46 +10,51 @@ Data init(int player_type, int opponent_type, int *player_board_score, int *oppo
     data.turn = data.have_passed = 0;
     data.debug_mode = 1;
 
-    data.player->board =
+    Player player, opponent;
+
+    player.board =
         coordinate_to_bitboard(WIDTH / 2 - 1, HEIGHT / 2 - 1) |
         coordinate_to_bitboard(WIDTH / 2, HEIGHT / 2),
-    data.opponent->board =
+    opponent.board =
         coordinate_to_bitboard(WIDTH / 2, HEIGHT / 2 - 1) |
         coordinate_to_bitboard(WIDTH / 2 - 1, HEIGHT / 2);
 
-    data.player->player_type   = player_type,
-    data.opponent->player_type = opponent_type;
+    player.player_type   = player_type,
+    opponent.player_type = opponent_type;
 
-    data.player->board_score   = player_board_score;
-    data.opponent->board_score = opponent_board_score;
+    player.board_score   = player_board_score;
+    opponent.board_score = opponent_board_score;
 
-    data.black = &data.player->board;
-    data.white = &data.opponent->board;
+    data.player   = &player,
+    data.opponent = &opponent;
+
+    data.black = &player.board;
+    data.white = &opponent.board;
     
     return data;
 }
 
-void view_game_status(Data data) {
+void view_game_status(Data *data) {
     putchar(' ');
     for (int i = 0; i < WIDTH; i++) printf(" %c", 'A' + i);
 
     for (int i = 0; i < WIDTH * HEIGHT; i++) {
         if (!(i % WIDTH)) printf("\n%d ", i / WIDTH + 1);
 
-        if (*data.black >> i & 1)         putchar(BLACK);
-        else if (*data.white >> i & 1)    putchar(WHITE);
-        else if (data.placable >> i & 1)  putchar(PLACABLE);
+        if (*data->black >> i & 1)         putchar(BLACK);
+        else if (*data->white >> i & 1)    putchar(WHITE);
+        else if (data->placable >> i & 1)  putchar(PLACABLE);
         else                              putchar(NONE);
         putchar(NONE);
     }
     puts("\n");
 
-    printf("BLACK %d : %d WHITE\n", count_standing_bit(*data.black), count_standing_bit(*data.white));
+    printf("BLACK %d : %d WHITE\n", count_standing_bit(*data->black), count_standing_bit(*data->white));
 }
 
 void set_placable(Data *data) {
     bitboard
-        hm = data->player->board & HMASK,
+        hm = data->opponent->board & HMASK,
         vm = data->opponent->board & VMASK,
         dw = hm & vm,
 

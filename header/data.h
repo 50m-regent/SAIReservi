@@ -11,7 +11,7 @@ typedef struct {
 } Data;
 
 Data init(int player_type, int opponent_type, int *player_board_score, int *opponent_board_score);
-void view_game_status(Data data);
+void view_game_status(Data *data);
 void set_placable(Data *data);
 
 #endif

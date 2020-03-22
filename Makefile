@@ -1,6 +1,9 @@
 PROGRAM = main
-OBJS = bitboard.o data.o game.o input.o
+OBJS = header/bitboard.o header/input.o header/data.o header/game.o 
 CC = gcc
 
 $(PROGRAM): $(PROGRAM).o $(OBJS)
 	$(CC) $(PROGRAM).c -o $(PROGRAM) $(OBJS)
+
+clean:
+	rm -f *.o header/*.o
