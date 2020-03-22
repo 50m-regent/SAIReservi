@@ -10,7 +10,7 @@ int
 int main() {
     srand(time(NULL));
     
-    Data data = init(1, 1, player_seed, opponent_seed);
+    Data data = init(0, 0, player_seed, opponent_seed);
 
     play(data);
 }
