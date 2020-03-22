@@ -32,7 +32,7 @@ bitboard coordinate_to_bitboard(int x, int y) {
     else                                             return 1lu << (y * WIDTH + x);
 }
 
-bitboard transfer(bitboard hand, bitboard mask, int direction) {
+bitboard transfer_bit(bitboard hand, bitboard mask, int direction) {
     if (direction > 0) hand >>= direction;
     else               hand <<= -direction;
     

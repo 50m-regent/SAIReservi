@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "data.h"
 #include "game.h"
 
 int 
@@ -9,6 +8,8 @@ int
     opponent_seed[] = {30, -20, 2, -2, -20, -2,  1, 2, -1};
 
 int main() {
+    srand(time(NULL));
+    
     Data data = init(0, 1, player_seed, opponent_seed);
 
     play(data);

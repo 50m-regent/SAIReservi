@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "input.h"
 #include "const.h"
@@ -18,27 +19,27 @@ int evaluate(Data data) {
     */
     int *points, black = 0, white = 0;
 
-    if (game->turn % 2) {
+    if (data.turn % 2) {
         int _points[] = {
-            game->p.seed[0], game->p.seed[1], game->p.seed[2], game->p.seed[3], game->p.seed[3], game->p.seed[2], game->p.seed[1], game->p.seed[0],
-            game->p.seed[1], game->p.seed[4], game->p.seed[5], game->p.seed[6], game->p.seed[6], game->p.seed[5], game->p.seed[4], game->p.seed[1],
-            game->p.seed[2], game->p.seed[5], game->p.seed[7], game->p.seed[8], game->p.seed[8], game->p.seed[7], game->p.seed[5], game->p.seed[2],
-            game->p.seed[3], game->p.seed[6], game->p.seed[8],               0,               0, game->p.seed[8], game->p.seed[6], game->p.seed[3]
+            data.opponent->board_score[0], data.opponent->board_score[1], data.opponent->board_score[2], data.opponent->board_score[3], data.opponent->board_score[3], data.opponent->board_score[2], data.opponent->board_score[1], data.opponent->board_score[0],
+            data.opponent->board_score[1], data.opponent->board_score[4], data.opponent->board_score[5], data.opponent->board_score[6], data.opponent->board_score[6], data.opponent->board_score[5], data.opponent->board_score[4], data.opponent->board_score[1],
+            data.opponent->board_score[2], data.opponent->board_score[5], data.opponent->board_score[7], data.opponent->board_score[8], data.opponent->board_score[8], data.opponent->board_score[7], data.opponent->board_score[5], data.opponent->board_score[2],
+            data.opponent->board_score[3], data.opponent->board_score[6], data.opponent->board_score[8],                             0,                             0, data.opponent->board_score[8], data.opponent->board_score[6], data.opponent->board_score[3]
         };
         points = _points;
     } else {
         int _points[] = {
-            game->o.seed[0], game->o.seed[1], game->o.seed[2], game->o.seed[3], game->o.seed[3], game->o.seed[2], game->o.seed[1], game->o.seed[0],
-            game->o.seed[1], game->o.seed[4], game->o.seed[5], game->o.seed[6], game->o.seed[6], game->o.seed[5], game->o.seed[4], game->o.seed[1],
-            game->o.seed[2], game->o.seed[5], game->o.seed[7], game->o.seed[8], game->o.seed[8], game->o.seed[7], game->o.seed[5], game->o.seed[2],
-            game->o.seed[3], game->o.seed[6], game->o.seed[8],               0,               0, game->o.seed[8], game->o.seed[6], game->o.seed[3]
+            data.player->board_score[0], data.player->board_score[1], data.player->board_score[2], data.player->board_score[3], data.player->board_score[3], data.player->board_score[2], data.player->board_score[1], data.player->board_score[0],
+            data.player->board_score[1], data.player->board_score[4], data.player->board_score[5], data.player->board_score[6], data.player->board_score[6], data.player->board_score[5], data.player->board_score[4], data.player->board_score[1],
+            data.player->board_score[2], data.player->board_score[5], data.player->board_score[7], data.player->board_score[8], data.player->board_score[8], data.player->board_score[7], data.player->board_score[5], data.player->board_score[2],
+            data.player->board_score[3], data.player->board_score[6], data.player->board_score[8],                           0,                           0, data.player->board_score[8], data.player->board_score[6], data.player->board_score[3]
         };
         points = _points;
     }
 
     for (int i = 0; i < WIDTH * HEIGHT; i++) {
-        if (game->black >> i & 1)      black += i < 32 ? points[i] : points[64 - i];
-        else if (game->white >> i & 1) white += i < 32 ? points[i] : points[64 - i];
+        if (*data.black >> i & 1)      black += i < 32 ? points[i] : points[64 - i];
+        else if (*data.white >> i & 1) white += i < 32 ? points[i] : points[64 - i];
     }
 
     return black - white;

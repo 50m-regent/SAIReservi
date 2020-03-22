@@ -9,4 +9,11 @@
 #define PLACABLE '.'
 #define NONE     ' '
 
+#define LMASK 0xfefefefefefefefeul
+#define RMASK 0x7f7f7f7f7f7f7f7ful
+#define HMASK LMASK & RMASK
+#define TMASK 0xffffffffffffff00ul
+#define BMASK 0x00fffffffffffffful
+#define VMASK TMASK & BMASK
+
 #endif

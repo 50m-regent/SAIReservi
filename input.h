@@ -1,5 +1,5 @@
 #ifndef _INPUT_H_
-#define _INPUT_H_h
+#define _INPUT_H_
 
 #include "data.h"
 

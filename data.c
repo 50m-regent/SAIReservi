@@ -23,8 +23,8 @@ Data init(int player_type, int opponent_type, int *player_board_score, int *oppo
     data.player->board_score   = player_board_score;
     data.opponent->board_score = opponent_board_score;
 
-    data.black = data.player->board;
-    data.white = data.opponent->board;
+    data.black = &data.player->board;
+    data.white = &data.opponent->board;
     
     return data;
 }
@@ -44,19 +44,19 @@ void view_game_status(Data data) {
     }
     puts("\n");
 
-    printf("BLACK %d : %d WHITE\n", count_standing_bit(data.black), count_standing_bit(data.white));
+    printf("BLACK %d : %d WHITE\n", count_standing_bit(*data.black), count_standing_bit(*data.white));
 }
 
 void set_placable(Data *data) {
     bitboard
-        hm = data->player.board & HMASK,
-        vm = data->opponent.board & VMASK,
+        hm = data->player->board & HMASK,
+        vm = data->opponent->board & VMASK,
         dw = hm & vm,
 
-        hb  = hm & (data->player.board >> 1 | data->player.board << 1),
-        vb  = vm & (data->player.board >> WIDTH | data->player.board << WIDTH),
-        db1 = dw & (data->player.board >> (WIDTH + 1) | data->player.board << (WIDTH + 1)),
-        db2 = dw & (data->player.board >> (WIDTH - 1) | data->player.board << (WIDTH - 1));
+        hb  = hm & (data->player->board >> 1 | data->player->board << 1),
+        vb  = vm & (data->player->board >> WIDTH | data->player->board << WIDTH),
+        db1 = dw & (data->player->board >> (WIDTH + 1) | data->player->board << (WIDTH + 1)),
+        db2 = dw & (data->player->board >> (WIDTH - 1) | data->player->board << (WIDTH - 1));
     
     for (int i = 0; i < 5; i++) {
         hb  |= hm & (hb >> 1 | hb << 1);
@@ -70,5 +70,5 @@ void set_placable(Data *data) {
     db1 = db1 >> (WIDTH + 1) | db1 << (WIDTH + 1);
     db2 = db2 >> (WIDTH - 1) | db2 << (WIDTH - 1);
 
-    game->placable = ~(data->player.board | data->opponent.board) & (hb | vb | db1 | db2);
+    data->placable = ~(data->player->board | data->opponent->board) & (hb | vb | db1 | db2);
 }

@@ -2,7 +2,6 @@
 #define _GAME_H_
 
 #include "data.h"
-#include "bitboard.h"
 
 void flip(Data *data);
 void change_turn(Data *data);
